@@ -1,22 +1,25 @@
-name: On PR Merged to Main
+name: Hotfix PR Merge Detailed File Changes
 
 on:
   pull_request:
     types: [closed]
 
 jobs:
-  analyze-merged-pr:
-    if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main'
+  hotfix-file-details:
+    if: >
+      github.event.pull_request.merged == true &&
+      startsWith(github.event.pull_request.head.ref, 'hotfix/')
     runs-on: ubuntu-latest
 
     steps:
-      - name: Print PR metadata
+      - name: Log basic PR info
         run: |
-          echo "PR #${{ github.event.pull_request.number }} was merged to 'main'"
+          echo "Hotfix PR #${{ github.event.pull_request.number }} merged"
+          echo "Branch: ${{ github.event.pull_request.head.ref }}"
           echo "Title: ${{ github.event.pull_request.title }}"
-          echo "Author: ${{ github.event.pull_request.user.login }}"
 
-      - name: Get changed files using GitHub API
+      - name: Get detailed changed files from GitHub API
+        id: files
         uses: actions/github-script@v7
         with:
           script: |
@@ -30,8 +33,21 @@ jobs:
               }
             );
 
-            console.log(`Changed files in PR #${pr.number}:`);
-            for (const file of files) {
-              console.log(`- ${file.filename} (${file.status})`);
-            }
+            // Build an array with detailed info for each file
+            const fileDetails = files.map(f => ({
+              filename: f.filename,
+              status: f.status,
+              additions: f.additions,
+              deletions: f.deletions
+            }));
+
+            console.log(JSON.stringify(fileDetails, null, 2));
+
+            return JSON.stringify(fileDetails);
+      
+      - name: Save file details JSON to artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: hotfix-file-changes
+          path: ${{ steps.files.outputs.result }}
 
