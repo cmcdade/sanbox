@@ -33,7 +33,6 @@ jobs:
               }
             );
 
-            // Build an array with detailed info for each file
             const fileDetails = files.map(f => ({
               filename: f.filename,
               status: f.status,
@@ -41,13 +40,17 @@ jobs:
               deletions: f.deletions
             }));
 
-            console.log(JSON.stringify(fileDetails, null, 2));
+            const json = JSON.stringify(fileDetails, null, 2);
+            console.log(json);
 
-            return JSON.stringify(fileDetails);
-      
-      - name: Save file details JSON to artifact
-        uses: actions/upload-artifact@v3
+            return json
+
+      - name: Write file details JSON to disk
+        run: echo '${{ steps.files.outputs.result }}' > hotfix-file-changes.json
+
+      - name: Upload file details artifact
+        uses: actions/upload-artifact@v4
         with:
           name: hotfix-file-changes
-          path: ${{ steps.files.outputs.result }}
+          path: hotfix-file-changes.json
 
