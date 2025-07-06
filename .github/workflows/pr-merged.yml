@@ -93,6 +93,7 @@ jobs:
 
       - name: Load hotfix_pr JSON into BigQuery
         run: |
+          ls
           bq load \
             --project_id=$PROJECT_ID \
             --source_format=NEWLINE_DELIMITED_JSON \
