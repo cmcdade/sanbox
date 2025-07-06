@@ -12,6 +12,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
+      DATASET: sandbox_dataset
       PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -89,3 +90,13 @@ jobs:
           ' | jq -c '.' > files.ndjson
           echo "Changed files JSON generated:"
           cat files.ndjson
+
+      - name: Load hotfix_pr JSON into BigQuery
+        run: |
+          bq load \
+            --project_id=$PROJECT_ID \
+            --source_format=NEWLINE_DELIMITED_JSON \
+            --replace \
+            $DATASET.hotfix_pr \
+            ./pr_data.json \
+            ./schemas/hotfix_pr.json

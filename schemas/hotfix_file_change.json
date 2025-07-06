@@ -1,0 +1,9 @@
+[
+  { "name": "pr_id", "type": "STRING", "mode": "REQUIRED" },
+  { "name": "filename", "type": "STRING", "mode": "REQUIRED" },
+  { "name": "additions", "type": "INT64", "mode": "NULLABLE" },
+  { "name": "deletions", "type": "INT64", "mode": "NULLABLE" },
+  { "name": "status", "type": "STRING", "mode": "REQUIRED" },
+  { "name": "file_extension", "type": "STRING", "mode": "NULLABLE" },
+  { "name": "top_level_dir", "type": "STRING", "mode": "REQUIRED" }
+]
