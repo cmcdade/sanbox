@@ -70,9 +70,7 @@ jobs:
               time_to_merge_secs: (if $time_to_merge_secs == null then null else $time_to_merge_secs end)
             }' > pr_data.json
 
-          echo "PR data JSON generated:"
-          jq .pr_data.json
-          cat pr_data.json
+          jq -c .pr_data.json > pr_data_compact.json
 
       - name: Extract PR file metadata and write NDJSON
         run: |
@@ -102,5 +100,5 @@ jobs:
             --source_format=NEWLINE_DELIMITED_JSON \
             --replace \
             $DATASET.hotfix_pr \
-            ./pr_data.json \
+            ./pr_data_compact.json \
             ./schemas/hotfix_pr.json
