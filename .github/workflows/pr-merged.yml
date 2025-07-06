@@ -68,3 +68,23 @@ jobs:
 
           echo "PR data JSON generated:"
           cat pr_data.json
+
+      - name: Extract PR file metadata and write NDJSON
+        run: |
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+          REPO="${{ github.repository }}"
+
+          gh pr view "$PR_NUMBER" --repo "$REPO" --json files --jq '
+            .files[] |
+            {
+              pr_id: "'"$PR_NUMBER"'",
+              filename: .path,
+              additions: .additions,
+              deletions: .deletions,
+              status: .status,
+              file_extension: (if (.path | test("\\.")) then "." + (.path | split(".")[-1]) else null end),
+              top_level_dir: (.path | split("/")[0])
+            }
+          ' | jq -c '.' > files.ndjson
+          echo "Changed files JSON generated:"
+          cat files.ndjson
