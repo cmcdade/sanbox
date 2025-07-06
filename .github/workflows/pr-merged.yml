@@ -71,6 +71,7 @@ jobs:
             }' > pr_data.json
 
           echo "PR data JSON generated:"
+          jq .pr_data.json
           cat pr_data.json
 
       - name: Extract PR file metadata and write NDJSON
