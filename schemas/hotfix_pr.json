@@ -1,0 +1,13 @@
+[
+  { "name": "pr_number", "type": "INT64", "mode": "REQUIRED", "description": "Github PR number" },
+  { "name": "repo", "type": "STRING", "mode": "REQUIRED" },
+  { "name": "pr_id", "type": "STRING", "mode": "REQUIRED" },
+  { "name": "branch_name", "type": "STRING", "mode": "REQUIRED" },
+  { "name": "incident_id", "type": "STRING", "mode": "NULLABLE" },
+  { "name": "title", "type": "STRING", "mode": "NULLABLE" },
+  { "name": "merge_timestamp", "type": "TIMESTAMP", "mode": "NULLABLE" },
+  { "name": "total_files_changed", "type": "INT64", "mode": "NULLABLE" },
+  { "name": "total_additions", "type": "INT64", "mode": "NULLABLE" },
+  { "name": "total_deletions", "type": "INT64", "mode": "NULLABLE" },
+  { "name": "time_to_merge_secs", "type": "INT64", "mode": "NULLABLE" }
+]
