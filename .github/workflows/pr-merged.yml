@@ -24,49 +24,47 @@ jobs:
         with:
           project_id: ${{ env.PROJECT_ID }}
           export_default_credentials: true
-      - name: Verify BigQuery access
+      - name: Generate PR JSON data
         run: |
-          echo "Checking BigQuery datasets..."
-          bq ls --project_id="$PROJECT_ID"
-      - name: Log basic PR info
-        run: |
-          echo "Hotfix PR #${{ github.event.pull_request.number }} merged"
-          echo "Branch: ${{ github.event.pull_request.head.ref }}"
-          echo "Title: ${{ github.event.pull_request.title }}"
+          # Convert timestamps to epoch seconds
+          created=$(date -d "${{ github.event.pull_request.created_at }}" +%s)
+          merged=$(date -d "${{ github.event.pull_request.merged_at }}" +%s)
 
-      - name: Get detailed changed files from GitHub API
-        id: files
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const pr = context.payload.pull_request;
-            const files = await github.paginate(
-              github.rest.pulls.listFiles,
-              {
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                pull_number: pr.number,
-              }
-            );
+          # Calculate time to merge in seconds or null
+          if [[ -z "$created" || -z "$merged" ]]; then
+            time_to_merge=null
+          else
+            time_to_merge=$((merged - created))
+          fi
 
-            const fileDetails = files.map(f => ({
-              filename: f.filename,
-              status: f.status,
-              additions: f.additions,
-              deletions: f.deletions
-            }));
+          # Convert merged_at to microseconds since epoch (BigQuery TIMESTAMP logicalType expects microseconds)
+          merge_timestamp_us=$((merged * 1000000))
 
-            const json = JSON.stringify(fileDetails, null, 2);
-            console.log(json);
+          jq -n \
+            --arg pr_number "${{ github.event.pull_request.number }}" \
+            --arg repo "${{ github.repository }}" \
+            --arg pr_id "${{ github.event.pull_request.node_id }}" \
+            --arg branch_name "${{ github.event.pull_request.head.ref }}" \
+            --arg incident_id "" \
+            --arg title "${{ github.event.pull_request.title }}" \
+            --argjson merge_timestamp "$merge_timestamp_us" \
+            --argjson total_files_changed "${{ github.event.pull_request.changed_files }}" \
+            --argjson total_additions "${{ github.event.pull_request.additions }}" \
+            --argjson total_deletions "${{ github.event.pull_request.deletions }}" \
+            --argjson time_to_merge_secs "$time_to_merge" \
+            '{
+              pr_number: ($pr_number | tonumber),
+              repo: $repo,
+              pr_id: $pr_id,
+              branch_name: $branch_name,
+              incident_id: ($incident_id | if . == "" then null else . end),
+              title: ($title | if . == "" then null else . end),
+              merge_timestamp: (if $merge_timestamp == 0 then null else $merge_timestamp end),
+              total_files_changed: ($total_files_changed | if . == 0 then null else . end),
+              total_additions: ($total_additions | if . == 0 then null else . end),
+              total_deletions: ($total_deletions | if . == 0 then null else . end),
+              time_to_merge_secs: (if $time_to_merge_secs == null then null else $time_to_merge_secs end)
+            }' > pr_data.json
 
-            return json
-
-      - name: Write file details JSON to disk
-        run: echo '${{ steps.files.outputs.result }}' > hotfix-file-changes.json
-
-      - name: Upload file details artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: hotfix-file-changes
-          path: hotfix-file-changes.json
-
+          echo "PR data JSON generated:"
+          cat pr_data.json
