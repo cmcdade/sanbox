@@ -83,7 +83,7 @@ jobs:
               filename: .path,
               additions: .additions,
               deletions: .deletions,
-              status: .status,
+              status: (.status // "unknown"),
               file_extension: (if (.path | test("\\.")) then "." + (.path | split(".")[-1]) else null end),
               top_level_dir: (.path | split("/")[0])
             }
