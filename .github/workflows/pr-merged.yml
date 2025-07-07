@@ -41,8 +41,7 @@ jobs:
             time_to_merge=$((merged - created))
           fi
 
-          # Convert merged_at to microseconds since epoch (BigQuery TIMESTAMP logicalType expects microseconds)
-          merge_timestamp_us=$((merged * 1000000))
+          merge_timestamp=$(date -u -d @"$merged" '+%Y-%m-%dT%H:%M:%SZ')
 
           jq -n \
             --arg pr_number "${{ github.event.pull_request.number }}" \
@@ -51,7 +50,7 @@ jobs:
             --arg branch_name "${{ github.event.pull_request.head.ref }}" \
             --arg incident_id "" \
             --arg title "${{ github.event.pull_request.title }}" \
-            --argjson merge_timestamp "$merge_timestamp_us" \
+            --argjson merge_timestamp "$merge_timestamp" \
             --argjson total_files_changed "${{ github.event.pull_request.changed_files }}" \
             --argjson total_additions "${{ github.event.pull_request.additions }}" \
             --argjson total_deletions "${{ github.event.pull_request.deletions }}" \
