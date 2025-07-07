@@ -71,6 +71,7 @@ jobs:
             }' > pr_data.json
 
           jq -c .pr_data.json > pr_data_compact.json
+          cat pr_data_compact.json
 
       - name: Extract PR file metadata and write NDJSON
         run: |
