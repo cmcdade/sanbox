@@ -13,7 +13,7 @@ jobs:
 
     env:
       DATASET: sandbox_dataset
-      HOTFIX_PR_TABLE: sandbox_dataset
+      HOTFIX_PR_TABLE: hotfix_pr
       HOTFIX_FILE_CHANGE_TABLE: hotfix_file_change
       PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
