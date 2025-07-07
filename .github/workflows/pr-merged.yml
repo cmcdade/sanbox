@@ -62,7 +62,7 @@ jobs:
               branch_name: $branch_name,
               incident_id: ($incident_id | if . == "" then null else . end),
               title: ($title | if . == "" then null else . end),
-              merge_timestamp: (if $merge_timestamp == 0 then null else $merge_timestamp end),
+              merge_timestamp: (if . == "" then null else $merge_timestamp end),
               total_files_changed: ($total_files_changed | if . == 0 then null else . end),
               total_additions: ($total_additions | if . == 0 then null else . end),
               total_deletions: ($total_deletions | if . == 0 then null else . end),
