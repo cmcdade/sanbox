@@ -50,7 +50,7 @@ jobs:
             --arg branch_name "${{ github.event.pull_request.head.ref }}" \
             --arg incident_id "" \
             --arg title "${{ github.event.pull_request.title }}" \
-            --argjson merge_timestamp "$merge_timestamp" \
+            --arg merge_timestamp "$merge_timestamp" \
             --argjson total_files_changed "${{ github.event.pull_request.changed_files }}" \
             --argjson total_additions "${{ github.event.pull_request.additions }}" \
             --argjson total_deletions "${{ github.event.pull_request.deletions }}" \
