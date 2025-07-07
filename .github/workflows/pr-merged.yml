@@ -13,6 +13,8 @@ jobs:
 
     env:
       DATASET: sandbox_dataset
+      HOTFIX_PR_TABLE: sandbox_dataset
+      HOTFIX_FILE_CHANGE_TABLE: hotfix_file_change
       PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -27,7 +29,6 @@ jobs:
         uses: google-github-actions/setup-gcloud@v1
         with:
           project_id: ${{ env.PROJECT_ID }}
-          export_default_credentials: true
       - name: Generate PR JSON data
         run: |
           # Convert timestamps to epoch seconds
@@ -101,7 +102,7 @@ jobs:
             --project_id=$PROJECT_ID \
             --source_format=NEWLINE_DELIMITED_JSON \
             --replace \
-            $DATASET.hotfix_pr \
+            $DATASET.HOTFIX_PR_TABLE \
             ./pr_data_compact.json \
             ./schemas/hotfix_pr.json
 
@@ -112,6 +113,6 @@ jobs:
             --source_format=NEWLINE_DELIMITED_JSON \
             --replace \
             --max_bad_records=10 \
-            $DATASET.hotfix_file_change \
+            $DATASET.$HOTFIX_FILE_CHANGE_TABLE \
             ./files_changed.ndjson \
             ./schemas/hotfix_file_change.json
