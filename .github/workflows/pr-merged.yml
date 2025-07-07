@@ -110,4 +110,4 @@ jobs:
             --max_bad_records=10 \
             $DATASET.hotfix_file_change \
             ./files_changed.ndjson \
-            ./schemas/hotfix_file_change_schema.json
+            ./schemas/hotfix_file_change.json
