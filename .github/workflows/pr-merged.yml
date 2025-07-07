@@ -70,7 +70,6 @@ jobs:
             }' > pr_data.json
 
           jq -c . pr_data.json > pr_data_compact.json
-          cat pr_data_compact.json
 
       - name: Extract PR file metadata and write NDJSON
         run: |
@@ -88,9 +87,8 @@ jobs:
               file_extension: (if (.path | test("\\.")) then "." + (.path | split(".")[-1]) else null end),
               top_level_dir: (.path | split("/")[0])
             }
-          ' | jq -c '.' > files.ndjson
+          ' | jq -c '.' > files_changed.ndjson
           echo "Changed files JSON generated:"
-          cat files.ndjson
 
       - name: Load hotfix_pr JSON into BigQuery
         run: |
@@ -102,3 +100,14 @@ jobs:
             $DATASET.hotfix_pr \
             ./pr_data_compact.json \
             ./schemas/hotfix_pr.json
+
+      - name: Load hotfix_file_change JSON into BigQuery
+        run: |
+          bq load \
+            --project_id=$PROJECT_ID \
+            --source_format=NEWLINE_DELIMITED_JSON \
+            --replace \
+            --max_bad_records=10 \
+            $DATASET.hotfix_file_change \
+            ./files_changed.ndjson \
+            ./schemas/hotfix_file_change_schema.json
