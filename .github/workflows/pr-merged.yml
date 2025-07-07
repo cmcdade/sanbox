@@ -101,8 +101,7 @@ jobs:
           bq load \
             --project_id=$PROJECT_ID \
             --source_format=NEWLINE_DELIMITED_JSON \
-            --replace \
-            $DATASET.HOTFIX_PR_TABLE \
+            $DATASET.$HOTFIX_PR_TABLE \
             ./pr_data_compact.json \
             ./schemas/hotfix_pr.json
 
@@ -111,7 +110,6 @@ jobs:
           bq load \
             --project_id=$PROJECT_ID \
             --source_format=NEWLINE_DELIMITED_JSON \
-            --replace \
             --max_bad_records=10 \
             $DATASET.$HOTFIX_FILE_CHANGE_TABLE \
             ./files_changed.ndjson \
