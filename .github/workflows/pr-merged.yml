@@ -11,6 +11,7 @@ jobs:
       startsWith(github.event.pull_request.head.ref, 'hotfix/')
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v3
       - uses: ./actions/action
         with:
           project_id: ${{ secrets.GCP_PROJECT_ID }}
