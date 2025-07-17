@@ -16,3 +16,4 @@ jobs:
         with:
           project_id: ${{ secrets.GCP_PROJECT_ID }}
           credentials_json: ${{ secrets.GCP_BQ_SERVICE_ACCOUNT_KEY }}
+          gh_token: ${{ secrets.GITHUB_TOKEN }}
