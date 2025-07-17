@@ -1,0 +1,121 @@
+name: "Hotfix metadata action"
+description: "Extract and load hotfix PR metadata into BigQuery"
+
+inputs:
+  project_id:
+    description: "GCP project ID"
+    required: true
+  dataset:
+    description: "BigQuery dataset"
+    required: true
+    default: "sandbox_dataset"
+  hotfix_pr_table:
+    description: "BigQuery table for PR metadata"
+    required: true
+    default: "hotfix_pr"
+  hotfix_file_change_table:
+    description: "BigQuery table for file changes"
+    required: true
+    default: "hotfix_file_change"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Authenticate to Google Cloud
+      uses: google-github-actions/auth@v1
+      with:
+        credentials_json: '${{ secrets.GCP_BQ_SERVICE_ACCOUNT_KEY }}'
+
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v1
+      with:
+        project_id: ${{ inputs.project_id }}
+
+    - name: Generate PR JSON data
+      shell: bash
+      run: |
+        created=$(date -d "${{ github.event.pull_request.created_at }}" +%s)
+        merged=$(date -d "${{ github.event.pull_request.merged_at }}" +%s)
+        repo="${{ github.repository }}"
+        pr_number="${{ github.event.pull_request.number }}"
+        pr_id="${repo}#${pr_number}"
+
+        if [[ -z "$created" || -z "$merged" ]]; then
+          time_to_merge=null
+        else
+          time_to_merge=$((merged - created))
+        fi
+
+        merge_timestamp=$(date -u -d @"$merged" '+%Y-%m-%dT%H:%M:%SZ')
+
+        jq -n \
+          --arg pr_number "$pr_number" \
+          --arg repo "$repo" \
+          --arg pr_id "$pr_id" \
+          --arg branch_name "${{ github.event.pull_request.head.ref }}" \
+          --arg incident_id "" \
+          --arg title "${{ github.event.pull_request.title }}" \
+          --arg merge_timestamp "$merge_timestamp" \
+          --argjson total_files_changed "${{ github.event.pull_request.changed_files }}" \
+          --argjson total_additions "${{ github.event.pull_request.additions }}" \
+          --argjson total_deletions "${{ github.event.pull_request.deletions }}" \
+          --argjson time_to_merge_secs "$time_to_merge" \
+          '{
+            pr_number: ($pr_number | tonumber),
+            repo: $repo,
+            pr_id: $pr_id,
+            branch_name: $branch_name,
+            incident_id: ($incident_id | if . == "" then null else . end),
+            title: ($title | if . == "" then null else . end),
+            merge_timestamp: (if . == "" then null else $merge_timestamp end),
+            total_files_changed: ($total_files_changed | if . == 0 then null else . end),
+            total_additions: ($total_additions | if . == 0 then null else . end),
+            total_deletions: ($total_deletions | if . == 0 then null else . end),
+            time_to_merge_secs: (if $time_to_merge_secs == null then null else $time_to_merge_secs end)
+          }' > pr_data.json
+
+        jq -c . pr_data.json > pr_data_compact.json
+
+    - name: Extract PR file metadata and write NDJSON
+      shell: bash
+      run: |
+        PR_NUMBER="${{ github.event.pull_request.number }}"
+        REPO="${{ github.repository }}"
+        PR_ID="${REPO}#${PR_NUMBER}"
+
+        gh pr view "$PR_NUMBER" --repo "$REPO" --json files --jq '
+          .files[] |
+          {
+            pr_id: "'"$PR_ID"'",
+            filename: .path,
+            additions: .additions,
+            deletions: .deletions,
+            status: (.status // "unknown"),
+            file_extension: (if (.path | test("\\.")) then "." + (.path | split(".")[-1]) else null end),
+            top_level_dir: (.path | split("/")[0])
+          }
+        ' | jq -c '.' > files_changed.ndjson
+
+    - name: Load hotfix_pr JSON into BigQuery
+      shell: bash
+      run: |
+        bq load \
+          --project_id="${{ inputs.project_id }}" \
+          --source_format=NEWLINE_DELIMITED_JSON \
+          "${{ inputs.dataset }}.${{ inputs.hotfix_pr_table }}" \
+          ./pr_data_compact.json \
+          ./schemas/hotfix_pr.json
+
+    - name: Load hotfix_file_change JSON into BigQuery
+      shell: bash
+      run: |
+        bq load \
+          --project_id="${{ inputs.project_id }}" \
+          --source_format=NEWLINE_DELIMITED_JSON \
+          --max_bad_records=10 \
+          "${{ inputs.dataset }}.${{ inputs.hotfix_file_change_table }}" \
+          ./files_changed.ndjson \
+          ./schemas/hotfix_file_change.json
