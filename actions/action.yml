@@ -2,6 +2,9 @@ name: "Hotfix metadata action"
 description: "Extract and load hotfix PR metadata into BigQuery"
 
 inputs:
+  credentials_json:
+    description: "GCP credentials JSON string"
+    required: true
   project_id:
     description: "GCP project ID"
     required: true
@@ -24,7 +27,7 @@ runs:
     - name: Authenticate to Google Cloud
       uses: google-github-actions/auth@v1
       with:
-        credentials_json: '${{ secrets.GCP_BQ_SERVICE_ACCOUNT_KEY }}'
+        credentials_json: '${{ inputs.credentials_json }}'
 
     - name: Set up Cloud SDK
       uses: google-github-actions/setup-gcloud@v1
