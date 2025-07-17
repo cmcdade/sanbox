@@ -24,8 +24,6 @@ inputs:
     required: true
     default: "hotfix_file_change"
 
-env:
-  GH_TOKEN: ${{ inputs.gh_token }}
 
 runs:
   using: "composite"
@@ -87,6 +85,8 @@ runs:
 
     - name: Extract PR file metadata and write NDJSON
       shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.gh_token }}
       run: |
         PR_NUMBER="${{ github.event.pull_request.number }}"
         REPO="${{ github.repository }}"
